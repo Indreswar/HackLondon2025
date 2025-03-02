@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProXet Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 1% 3%;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .chat-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: white;
+        }
+        .chat-header {
+            background:rgb(8, 8, 8);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .chat-box {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            max-width: 75%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background:rgb(5, 5, 5);
+            color: white;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background:rgb(226, 34, 34);
+            color: white;
+            align-self: flex-start;
+        }
+        .input-area {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid #ddd;
+            background: #fff;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            font-size: 16px;
+        }
+        .input-area button {
+            padding: 12px;
+            background:rgb(17, 16, 16);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 16px;
+        }
+        .input-area button:hover {
+            background: #005bb5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <div class="chat-header">ProXet Chatbot  - powered by Deepseek R1</div>
+        <div class="chat-box" id="chatBox"></div>
+        <div class="input-area">
+            <input type="text" id="userMessage" placeholder="Type your message..." onkeypress="handleKeyPress(event)" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        function handleKeyPress(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const userInput = document.getElementById("userMessage");
+            const chatBox = document.getElementById("chatBox");
+            const message = userInput.value.trim();
+
+            if (!message) {
+                alert("⚠️ Please enter a message!");
+                return;
+            }
+
+            // Display user message
+            const userMessageDiv = document.createElement("div");
+            userMessageDiv.className = "message user-message";
+            userMessageDiv.innerText = message;
+            chatBox.appendChild(userMessageDiv);
+
+            // Show "Thinking..." message
+            const botThinkingDiv = document.createElement("div");
+            botThinkingDiv.className = "message bot-message";
+            botThinkingDiv.innerText = "Thinking...";
+            chatBox.appendChild(botThinkingDiv);
+
+            // Clear input field
+            userInput.value = "";
+
+            // Scroll to the bottom
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            try {
+                const response = await fetch("/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ user_id: "123", message: message })
+                });
+
+                let data = await response.json();
+
+                // Remove "Thinking..." message
+                chatBox.removeChild(botThinkingDiv);
+
+                // Remove <think> tags and any resulting blank lines
+                let cleanedResponse = data.response.replace(/<\/?think>/g, "").trim();
+                cleanedResponse = cleanedResponse.replace(/\n\s*\n/g, "\n");
+
+                // Show bot response
+                const botMessageDiv = document.createElement("div");
+                botMessageDiv.className = "message bot-message";
+                botMessageDiv.innerText = "ProXet AI: " + cleanedResponse;
+                chatBox.appendChild(botMessageDiv);
+
+                // Scroll to the bottom
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+            } catch (error) {
+                chatBox.removeChild(botThinkingDiv);
+                alert("⚠️ Error connecting to the server!");
+            }
+        }
+    </script>
+
+</body>
+</html>
